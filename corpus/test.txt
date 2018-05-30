@@ -1,0 +1,131 @@
+==================
+Single Line Comment
+==================
+
+# Comment
+
+---
+
+(program
+    (comment))
+
+==================
+Simple Assignment of Variable
+==================
+
+namespace = test
+
+---
+
+(program
+    (statement
+        (assignment_statement
+            (variable
+                (identifier))
+            (expression
+                (variable
+                    (identifier))))))
+
+
+==================
+Simple Assignment of Numeric
+==================
+
+namespace = 20
+
+---
+
+(program
+    (statement
+        (assignment_statement
+            (variable
+                (identifier))
+            (expression
+                (number)))))
+
+==================
+Simple Assignment of String
+==================
+
+name = "Example"
+
+---
+
+(program
+    (statement
+        (assignment_statement
+            (variable
+                (identifier))
+            (string))))
+
+==================
+Simple Assignment of Localisation Key
+==================
+
+name = [Example]
+
+---
+
+(program
+    (statement
+        (assignment_statement
+            (variable
+                (identifier))
+            (expression
+                (loc_key)))))
+
+==================
+Assignment of a Complex Expression
+==================
+
+character_event = {
+    id = 20
+}
+
+---
+
+(program
+    (statement
+        (assignment_statement
+            (variable
+                (identifier))
+            (expression
+                (complex_expression
+                    (statement
+                        (assignment_statement
+                            (variable
+                                (identifier))
+                            (expression
+                                (number)))))))))
+
+==================
+Nested Complex Statements
+==================
+
+character_event = {
+    immediate = {
+        fertility = 20
+    }
+}
+
+---
+
+(program
+    (statement
+        (assignment_statement
+            (variable
+                (identifier))
+            (expression
+                (complex_expression
+                    (statement
+                        (assignment_statement
+                            (variable
+                                (identifier))
+                            (expression
+                            (complex_expression
+                                (statement
+                                    (assignment_statement
+                                        (variable
+                                            (identifier))
+                                        (expression
+                                            (number)))))))))))))

@@ -1,0 +1,1343 @@
+# Some event code for testing
+namespace = vapid
+
+character_event = { # Initialization event - fired from on_start
+	id = vapid.1
+	is_triggered_only = yes
+	hide_window = yes
+
+	only_rulers = yes
+
+	trigger = {
+		has_landed_title = e_rebels
+		NOT = { has_global_flag = flag_vapid_initialized }
+	}
+
+	immediate = {
+		set_global_flag = flag_vapid_initialized
+		log = "Debug: VAPID system has been initialized."
+
+		set_global_flag = flag_vapid_horn_active
+		log = "Debug: VAPID horn naming has been activated."
+
+		set_global_flag = flag_vapid_armour_active
+		log = "Debug: VAPID armour has been activated."
+
+		if = { #Only enable auto sword naming by default if pre-doom
+			limit = { NOT = { start_date = 7886.1.1 } }
+			set_global_flag = flag_vapid_sword_active
+			log = "Debug: VAPID sword has been activated."
+		}
+	}
+
+	option = {
+		random_playable_ruler = {
+			limit = {
+				ai = yes #Do not mess with the player's shit
+				any_artifact = {
+					OR = {
+						AND = { #Find noncanon valyrian swords if enabled
+							artifact_type = valyrian_steel
+							NOR = {
+								has_artifact_flag = flag_named_sword
+								has_artifact_flag = canon_sword
+								has_artifact_flag = reforging_sword # Used to denote a generic sword that's been reforged
+							}
+							has_global_flag = flag_vapid_sword_active
+						}
+						AND = { #Find valyrian armour if enabled
+							artifact_type = valyrian_armour
+							NOT = { has_artifact_flag = flag_named_sword }
+							has_global_flag = flag_vapid_armour_active
+						}
+					}
+				}
+			}
+			log = "Debug: Targeting [This.GetFullName] ([This.GetID]) for armour/sword VAPIDization."
+			character_event = { id = vapid.5 }
+		}
+		random_playable_ruler = {
+			limit = {
+				has_global_flag = flag_vapid_horn_active
+				ai = yes #Do not mess with the player's shit
+				any_artifact = {
+					OR = {
+						artifact_type = dragon_horn_a
+						artifact_type = dragon_horn_b
+					}
+					NOT = { has_artifact_flag = flag_named_horn }
+				}
+			}
+			log = "Debug: Targeting [This.GetFullName] ([This.GetID]) for horn VAPIDization."
+			character_event = { id = vapid.6 }
+		}
+	}
+}
+
+character_event = { #Used for managing auto VAPIDiziation
+	id = vapid.2
+	is_triggered_only = yes
+	hide_from = yes
+	picture = "GFX_evt_valyrian_steel"
+	ai = no
+	has_global_flag = flag_vapid_initialized
+
+	desc = EVTDESC_VAPID.2
+
+	immediate = {
+		set_character_flag = flag_vapid_manage
+	}
+
+	option = { #Disable sword naming
+		trigger = { has_global_flag = flag_vapid_sword_active }
+		name = EVTOPT_disable_sword_VAPID.2
+		hidden_tooltip = {
+			clr_global_flag = flag_vapid_sword_active
+			log = "Debug: VAPID sword naming has been dectivated."
+			repeat_event = { id = vapid.2 }
+		}
+	}
+	option = { #Enable sword naming - predoom
+		trigger = {
+			NOT = { has_global_flag = flag_vapid_sword_active }
+			NOT = { start_date = 7886.1.1 }
+		}
+		name = EVTOPT_enable_sword_VAPID.2
+		hidden_tooltip = {
+			set_global_flag = flag_vapid_sword_active
+			log = "Debug: VAPID armour naming has been activated."
+			repeat_event = { id = vapid.2 }
+		}
+	}
+	option = { #Enable sword naming - postdoom
+		trigger = {
+			NOT = { has_global_flag = flag_vapid_sword_active }
+			start_date = 7886.1.1
+		}
+		name = EVTOPT_enable_sword_VAPID.2
+		custom_tooltip = {
+			text = TOOLTIPenable_sword_VAPID.2
+			hidden_tooltip = {
+				set_global_flag = flag_vapid_sword_active
+				log = "Debug: VAPID armour naming has been activated."
+				repeat_event = { id = vapid.2 }
+			}
+		}
+	}
+	option = { #Disable armour naming
+		trigger = { has_global_flag = flag_vapid_armour_active }
+		name = EVTOPT_disable_armour_VAPID.2
+		hidden_tooltip = {
+			clr_global_flag = flag_vapid_armour_active
+			log = "Debug: VAPID armour naming has been deactivated."
+			repeat_event = { id = vapid.2 }
+		}
+	}
+	option = { #Enable armour naming
+		trigger = {  NOT = { has_global_flag = flag_vapid_armour_active } }
+		name = EVTOPT_enable_armour_VAPID.2
+		hidden_tooltip = {
+			set_global_flag = flag_vapid_armour_active
+			log = "Debug: VAPID armour naming has been activated."
+			repeat_event = { id = vapid.2 }
+		}
+	}
+	option = { #Disable horn naming
+		trigger = { has_global_flag = flag_vapid_horn_active }
+		name = EVTOPT_disable_horn_VAPID.2
+		hidden_tooltip = {
+			clr_global_flag = flag_vapid_horn_active
+			log = "Debug: VAPID horn naming has been deactivated."
+			repeat_event = { id = vapid.2 }
+		}
+	}
+	option = { #Enable horn naming
+		trigger = {  NOT = { has_global_flag = flag_vapid_horn_active } }
+		name = EVTOPT_enable_horn_VAPID.2
+		hidden_tooltip = {
+			set_global_flag = flag_vapid_horn_active
+			log = "Debug: VAPID horn naming has been activated."
+			repeat_event = { id = vapid.2 }
+		}
+	}
+	option = { #All done
+		name = EVTOPT_done_VAPID.2
+		hidden_tooltip = { clr_character_flag = flag_vapid_manage }
+	}
+}
+
+character_event = { #Used for naming all swords and armour that spawn on game start.
+	id = vapid.5
+	is_triggered_only = yes
+	hide_window = yes
+
+	has_global_flag = flag_vapid_initialized
+	only_playable = yes
+	ai = yes
+
+	trigger = {
+		ai = yes
+		any_artifact = {
+			OR = {
+				AND = { #Find noncanon valyrian swords if enabled
+					artifact_type = valyrian_steel
+					NOR = {
+						has_artifact_flag = flag_named_sword
+						has_artifact_flag = canon_sword
+						has_artifact_flag = reforging_sword
+					}
+					has_global_flag = flag_vapid_sword_active
+				}
+				AND = { #Find valyrian armour if enabled
+					artifact_type = valyrian_armour
+					NOT = { has_artifact_flag = flag_named_sword }
+					has_global_flag = flag_vapid_armour_active
+				}
+			}
+		}
+	}
+
+	immediate = {
+		#This code is a little clunky because we want to favor
+		#swords over armor since the random scopes don't seem to
+		#target root and we have a seperate armor naming event.
+		#This way if the last character has both armor and a
+		#sword, then we just name the sword and let the other
+		#event handle the armor.
+		if = {
+			limit = {
+				any_artifact = {
+					artifact_type = valyrian_steel
+					NOR = {
+						has_artifact_flag = flag_named_sword
+						has_artifact_flag = canon_sword
+						has_artifact_flag = reforging_sword
+					}
+					has_global_flag = flag_vapid_sword_active
+				}
+			}
+			random_artifact = {
+				limit = {
+					artifact_type = valyrian_steel
+					NOR = {
+						has_artifact_flag = flag_named_sword
+						has_artifact_flag = canon_sword
+						has_artifact_flag = reforging_sword
+					}
+					has_global_flag = flag_vapid_sword_active
+				}
+				set_name = [Root.GetSwordName]
+				set_artifact_flag = flag_named_sword
+				log = "Debug: [This.GetFullName] is now wielded by [Root.GetFullName] ([Root.GetID])."
+			}
+		}
+		else = {
+			random_artifact = {
+				limit = {
+					artifact_type = valyrian_armour
+					NOT = { has_artifact_flag = flag_named_sword }
+					has_global_flag = flag_vapid_armour_active
+				}
+				set_name = [Root.GetArmourName]
+				set_artifact_flag = flag_named_sword
+				log = "Debug: [This.GetFullName] is now worn by [Root.GetFullName] ([Root.GetID])."
+			}
+		}
+	}
+
+	option = {
+		random_playable_ruler = {
+			limit = {
+				ai = yes
+				any_artifact = {
+					OR = {
+						AND = { #Find noncanon valyrian swords if enabled
+							artifact_type = valyrian_steel
+							NOR = {
+								has_artifact_flag = flag_named_sword
+								has_artifact_flag = canon_sword
+								has_artifact_flag = reforging_sword
+							}
+							has_global_flag = flag_vapid_sword_active
+						}
+						AND = { #Find valyrian armour if enabled
+							artifact_type = valyrian_armour
+							NOT = { has_artifact_flag = flag_named_sword }
+							has_global_flag = flag_vapid_armour_active
+						}
+					}
+				}
+			}
+			character_event = { id = vapid.5 days = 1 }
+			#I'm chaining the events like this because having them
+			#all fire concurrently seems to cause the PRNG to not
+			#be all that random when the localisation commands fire.
+		}
+	}
+}
+
+character_event = { #Used for naming all dragon horns that spawn on game start.
+	id = vapid.6
+	is_triggered_only = yes
+	hide_window = yes
+
+	has_global_flag = flag_vapid_horn_active
+	only_playable = yes
+	ai = yes
+
+	trigger = {
+		ai = yes
+		any_artifact = {
+			OR = {
+				artifact_type = dragon_horn_a
+				artifact_type = dragon_horn_b
+			}
+			NOT = { has_artifact_flag = flag_named_horn }
+		}
+	}
+
+	immediate = {
+		clear_event_target = target_dragon_horn_name
+		e_rebels = {
+			holder_scope = {
+				random_list = {
+					50 = {
+						create_character = {
+							dynasty = none
+							age = 0
+							culture = dragon_culture
+							religion = dragon_rel
+						}
+					}
+					50 = {
+						create_character = {
+							female = yes
+							dynasty = none
+							age = 0
+							culture = dragon_culture
+							religion = dragon_rel
+						}
+					}
+				}
+				new_character = {
+					generate_dragon_name_effect = yes
+					save_event_target_as = target_dragon_horn_name
+				}
+			}
+		}
+
+	}
+	option = {
+		random_artifact = {
+			limit = {
+				OR = {
+					artifact_type = dragon_horn_a
+					artifact_type = dragon_horn_b
+				}
+				NOT = { has_artifact_flag = flag_named_horn }
+			}
+			set_name = [target_dragon_horn_name.GetHornName]
+			set_artifact_flag = flag_named_horn
+			log = "Debug: [This.GetFullName] is now blown by [Root.GetFullName] ([Root.GetID])." #Only cool people will ever see this joke
+		}
+	}
+	after = {
+		event_target:target_dragon_horn_name = {
+			death = yes
+		}
+		clear_event_target = target_dragon_horn_name
+		random_playable_ruler = {
+			limit = {
+				ai = yes
+				any_artifact = {
+					OR = {
+						artifact_type = dragon_horn_a
+						artifact_type = dragon_horn_b
+					}
+					NOT = { has_artifact_flag = flag_named_horn }
+				}
+			}
+			character_event = { id = vapid.6 days = 1 }
+			#I'm chaining the events like this because having them
+			#all fire concurrently seems to cause the PRNG to not
+			#be all that random when the localisation commands fire.
+		}
+	}
+}
+
+character_event = { #Automatic armor naming for AI
+	id = vapid.10
+	hide_window = yes
+
+	has_global_flag = flag_vapid_armour_active
+	only_playable = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	ai = yes
+
+	trigger = {
+		any_artifact = {
+			artifact_type = valyrian_armour
+			NOT = { has_artifact_flag = flag_named_sword }
+			NOT = { has_artifact_flag = canon_sword }
+			NOT = { has_artifact_flag = reforging_sword }
+		}
+	}
+	mean_time_to_happen = {
+		months = 6
+	}
+	immediate = {
+
+	}
+	option = {
+		random_artifact = {
+			limit = {
+				artifact_type = valyrian_armour
+				NOT = { has_artifact_flag = flag_named_sword }
+				NOT = { has_artifact_flag = canon_sword }
+				NOT = { has_artifact_flag = reforging_sword }
+			}
+			set_name = [Root.GetArmourName]
+			set_artifact_flag = flag_named_sword
+			log = "Debug: [This.GetFullName] is now worn by [Root.GetFullName] ([Root.GetID])."
+		}
+	}
+	after = {
+
+	}
+}
+
+character_event = { #Automatic sword naming for AI
+	id = vapid.11
+	hide_window = yes
+
+	has_global_flag = flag_vapid_sword_active
+	only_playable = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	ai = yes
+
+	trigger = {
+		any_artifact = {
+			artifact_type = valyrian_sword
+			NOT = { has_artifact_flag = flag_named_sword }
+		}
+	}
+	mean_time_to_happen = {
+		months = 6
+	}
+	immediate = {
+
+	}
+	option = {
+		random_artifact = {
+			limit = {
+				artifact_type = valyrian_armour
+				NOT = { has_artifact_flag = flag_named_sword }
+			}
+			set_name = [Root.GetSwordName]
+			set_artifact_flag = flag_named_sword
+			set_artifact_flag = valyrian_steel_renamed # Used to grab the name for localisation
+			log = "Debug: [This.GetFullName] is now wielded by [Root.GetFullName] ([Root.GetID])."
+		}
+	}
+	after = {
+
+	}
+}
+
+character_event = { #Automatic horn naming for AI
+	id = vapid.12
+	hide_window = yes
+
+	has_global_flag = flag_vapid_horn_active
+	only_playable = yes
+	capable_only = yes
+	prisoner = no
+	min_age = 16
+	ai = yes
+
+	trigger = {
+		any_artifact = {
+			OR = {
+				artifact_type = dragon_horn_a
+				artifact_type = dragon_horn_b
+			}
+			NOT = { has_artifact_flag = flag_named_horn }
+		}
+	}
+	mean_time_to_happen = {
+		months = 6
+	}
+	immediate = {
+		clear_event_target = target_dragon_horn_name
+		e_rebels = {
+			holder_scope = {
+				random_list = {
+					50 = {
+						create_character = {
+							dynasty = none
+							age = 0
+							culture = dragon_culture
+							religion = dragon_rel
+						}
+					}
+					50 = {
+						create_character = {
+							female = yes
+							dynasty = none
+							age = 0
+							culture = dragon_culture
+							religion = dragon_rel
+						}
+					}
+				}
+				new_character = {
+					generate_dragon_name_effect = yes
+					save_event_target_as = target_dragon_horn_name
+				}
+			}
+		}
+
+	}
+	option = {
+		random_artifact = {
+			limit = {
+				OR = {
+					artifact_type = dragon_horn_a
+					artifact_type = dragon_horn_b
+				}
+				NOT = { has_artifact_flag = flag_named_horn }
+			}
+			set_name = [target_dragon_horn_name.GetHornName]
+			set_artifact_flag = flag_named_horn
+			log = "Debug: [This.GetFullName] is now blown by [Root.GetFullName] ([Root.GetID])." #Only cool people will ever see this joke
+		}
+	}
+	after = {
+		event_target:target_dragon_horn_name = {
+			death = yes
+		}
+		clear_event_target = target_dragon_horn_name
+	}
+}
+
+character_event = { #Generates names for swords, armour, and dragon horns - fired by rename_valyrian_artifact decisions
+	id = vapid.1599
+	is_triggered_only = yes
+	hide_window = yes
+	#Stack for first run when fired by decision
+	#ROOT = Owner
+	#FROM = Owner
+	#FROMFROM = Player
+	#FROMFROMFROM = Artifact
+	#This = Owner
+	#target_valyrian_artifact = Artifact
+
+	trigger = {
+		OR = {
+			FROMFROM = { ai = no }
+			FROM = { ai = no }
+		}
+		event_target:target_valyrian_artifact = {
+			OR = {
+				artifact_type = dragon_horn_a
+				artifact_type = dragon_horn_b
+				artifact_type = valyrian_steel
+				artifact_type = valyrian_armour
+			}
+			NOT = { has_artifact_flag = canon_sword }
+		}
+	}
+
+	immediate = {
+		clear_event_target = target_dummy_name
+		e_rebels = {
+			holder_scope = {
+				random_list = {
+					50 = {
+						create_character = {
+							dynasty = none
+							age = 0
+							culture = dragon_culture
+							religion = dragon_rel
+							trait = dragon
+						}
+					}
+					50 = {
+						create_character = {
+							female = yes
+							dynasty = none
+							age = 0
+							culture = dragon_culture
+							religion = dragon_rel
+							trait = dragon
+						}
+					}
+				}
+				new_character = { save_event_target_as = target_dummy_name }
+			}
+		}
+		event_target:target_dummy_name = { log = "Debug: Creating names for [This.GetFullName]" }
+		event_target:target_valyrian_artifact = {
+			trigger_switch = {
+				on_trigger = has_artifact_flag
+				valyrian_steel = {
+					event_target:target_dummy_name = {
+						set_name = [target_valyrian_artifact.Owner.GetSwordName]
+						log = "Debug: Using [This.GetFullName] for sword naming."
+					}
+				}
+				valyrian_armour = {
+					event_target:target_dummy_name = {
+						set_name = [target_valyrian_artifact.Owner.GetArmourName]
+						log = "Debug: Using [This.GetFullName] for armour naming."
+					}
+				}
+				dragonhorn = {
+					event_target:target_dummy_name = {
+						generate_dragon_name_effect = yes
+						log = "Debug: Using [This.GetFirstNameWithNick] for horn naming."
+					}
+				}
+			}
+		}
+		# event_target:target_dummy_name = { save_event_target_as = test_target1 }
+		# event_target:target_valyrian_artifact = { save_event_target_as = test_target2 }
+		# print_scope_effect = yes
+	}
+
+	option = {
+		if = {
+			limit = {
+				FROMFROM = { character = ROOT }
+			}
+			FROM = { character_event = { id = vapid.15 } }
+
+		}
+		else = {
+			FROMFROM = { character_event = { id = vapid.15 } }
+		}
+	}
+
+	after = {
+
+	}
+
+}
+
+character_event = { #Artifact naming fired from decision
+	id = vapid.15
+	is_triggered_only = yes
+	show_portait = FROM
+	picture = "GFX_evt_valyrian_steel"
+	#Stack for first fired by from vapid.1599
+	#ROOT = Player
+	#FROM = Owner
+	#FROMFROM = Owner
+	#FROMFROMFROM = Player
+	#FROMFROMFROMFROM = Artifact to be named
+	#This = Player
+	#target_valyrian_artifact = Artifact to be named
+	#target_dummy_name = Artifact used to generate name
+
+	desc = {
+	  trigger = { #Rename armor
+		event_target:target_valyrian_artifact = { artifact_type = valyrian_armour }
+	  }
+	  text = EVTDESC_armour_VAPID.15
+	}
+	desc = {
+	  trigger = { #Rename swords
+		event_target:target_valyrian_artifact = { artifact_type = valyrian_steel }
+	  }
+	  text = EVTDESC_sword_VAPID.15
+	}
+	desc = {
+	  trigger = { #Rename horns
+		event_target:target_valyrian_artifact = { has_artifact_flag = dragonhorn }
+	  }
+	  text = EVTDESC_horn_VAPID.15
+	}
+
+	trigger = {
+		ai = no
+		event_target:target_valyrian_artifact = {
+			OR = {
+				artifact_type = dragon_horn_a
+				artifact_type = dragon_horn_b
+				artifact_type = valyrian_steel
+				artifact_type = valyrian_armour
+			}
+			NOT = { has_artifact_flag = canon_sword }
+		}
+	}
+
+	immediate = {
+		# print_scope_effect = yes
+	}
+
+	option = { #Pick this name
+		name = {
+			text = EVTOPT_change_sword_VAPID.15
+			trigger = { event_target:target_valyrian_artifact = { has_artifact_flag = valyrian_steel } }
+		}
+		name = {
+			text = EVTOPT_change_armour_VAPID.15
+			trigger = { event_target:target_valyrian_artifact = { has_artifact_flag = valyrian_armour } }
+		}
+		name = {
+			text = EVTOPT_change_horn_VAPID.15
+			trigger = { event_target:target_valyrian_artifact = { has_artifact_flag = dragonhorn } }
+		}
+		custom_tooltip = {
+			text = TOOLTIPvapidCHANGE.15
+			hidden_tooltip = {
+				if = { #Setting name on dragon horn
+					limit = { event_target:target_valyrian_artifact = { has_artifact_flag = dragonhorn } }
+					event_target:target_valyrian_artifact = {
+						set_name = [target_dummy_name.GetHornName]
+						set_artifact_flag = flag_named_horn
+					}
+				}
+				else = { #Setting name for amour/swords
+					event_target:target_valyrian_artifact = {
+						set_name = [target_dummy_name.GetFullName]
+						set_artifact_flag = flag_named_sword
+						set_artifact_flag = valyrian_steel_renamed
+					}
+				}
+				event_target:target_dummy_name = {
+					limit = { is_alive = yes }
+					log = "Debug: Sorry [This.GetFullName] but you had to go."
+					death = yes
+				}
+			}
+		}
+	}
+
+	option = { #Generate a new name
+		name = EVTOPT_reload_VAPID.15
+		log = "Debug: Firing vapid.1599 again"
+		custom_tooltip = {
+			text = TOOLTIPvapidRELOAD.15
+			hidden_tooltip = {
+				event_target:target_dummy_name = {
+					limit = { is_alive = yes }
+					log = "Debug: Sorry [This.GetFullName] but you had to go."
+					death = yes
+				}
+				FROM = { character_event = { id = vapid.1599 } }
+			}
+		}
+	}
+
+	option = { #Nevermind
+		name = EVTOPT_cancel_VAPID.15
+		hidden_tooltip = {
+			event_target:target_dummy_name = {
+				limit = { is_alive = yes }
+				log = "Debug: Sorry [This.GetFullName] but you had to go."
+				death = yes
+			}
+		}
+	}
+
+	after = {
+
+	}
+}
+
+narrative_event = { #Used for creating a custom dynastic sword e.g. dark sister or lady forlorn
+	id = vapid.20
+	desc = EVTDESC_VAPID.20
+	title = EVTTITLE_VAPID.20
+	is_triggered_only = yes # Triggered by decision declare_dynastic_sword
+	show_portait = FROM
+	picture = "GFX_evt_valyrian_steel"
+	#Stack after decision is made
+	#ROOT = Player
+	#FROM = Player
+	#FROMFROM = Player
+	#FROMFROMFROM = Artifact
+	#FROMFROMFROMFROM =
+	#This = Player
+	#target_valyrian_artifact = Artifact
+	#target_dynasty_sword_creator = Player (a global event_target used to link creating dynasty to ancestral sword)
+
+	trigger = {
+		# event_target:target_valyrian_artifact = { artifact = FROMFROMFROM }
+		event_target:target_dynasty_sword_creator = { character = ROOT }
+	}
+
+	option = {
+		name = {
+			text = EVTOPT_dynasty_sword_VAPID.20
+			trigger = {
+				NOT = { has_house_words_trigger = yes }
+			}
+		}
+		name = {
+			text = EVTOPTGETHOUSEWORDS
+			trigger = {
+				has_house_words_trigger = yes
+			}
+		}
+	}
+	option = {
+		name = EVTOPT_cancel_VAPID.20
+		hidden_tooltip = {
+			event_target:target_valyrian_artifact = { clr_artifact_flag = flag_dynastic_sword}
+			clear_global_event_target = target_dynasty_sword_creator
+		}
+	}
+}
+
+character_event = { # After x years the dynastic sword is recognized as being dynastic
+	id = vapid.21
+	hide_window = yes
+	only_playable = yes
+	only_capable = yes
+	prisoner = no
+	min_age = 15
+	#Stack at event chain start
+	#ROOT = Sword owner
+	#This = Player
+	#target_dynasty_sword_creator = oroginal character that declared the sword ancestral (a global event_target used to link creating dynasty to ancestral sword)
+
+	trigger = {
+		any_artifact = {
+			had_artifact_flag = {
+				flag = flag_dynastic_sword
+				days = 10950 # 30 years
+			}
+			NOT = { has_artifact_flag = flag_confirmed_dynastic }
+		}
+		event_target:target_dynasty_sword_creator = { dynasty = ROOT }
+	}
+
+	mean_time_to_happen = {
+		years = 100
+
+		modifier = { # Each kingdom title knocks off about 2 years
+			factor = 0.98
+			dynastic_prestige = 20
+		}
+		modifier = { # Each empire title knocks off about 5 years
+			factor = 0.95
+			dynastic_prestige = 40
+		}
+		modifier = {
+			factor = 0.98
+			dynastic_prestige = 60
+		}
+		modifier = {
+			factor = 0.95
+			dynastic_prestige = 80
+		}
+
+		# If your family isn't respected much, who cares what you want
+		modifier = {
+			factor = 1.25
+			NOT = { dynastic_prestige = 20 }
+		}
+		modifier = {
+			factor = 1.25
+			NOT = { dynastic_prestige = 10 }
+		}
+		modifier = {
+			factor = 1.5
+			NOT = { dynastic_prestige = 5 }
+		}
+
+		# Your own prestige helps too
+		modifier = {
+			factor =  0.98
+			prestige = 1000
+		}
+		modifier = {
+			factor =  0.98
+			prestige = 2000
+		}
+		modifier = {
+			factor =  0.98
+			prestige = 3000
+		}
+		modifier = {
+			factor =  0.98
+			prestige = 4000
+		}
+		modifier = {
+			factor =  0.98
+			prestige = 5000
+		}
+
+		# The more family that's owned the sword, the better
+		modifier = {
+			factor = 0.85
+			any_dynasty_member_even_if_dead = {
+				count = 5
+				ROOT = {
+					any_artifact = {
+						has_artifact_flag = flag_dynastic_sword
+						previous_holder_@PREVPREV
+					}
+				}
+			}
+		}
+		modifier = {
+			factor = 0.75
+			any_dynasty_member_even_if_dead = {
+				count = 10
+				ROOT = {
+					any_artifact = {
+						has_artifact_flag = flag_dynastic_sword
+						previous_holder_@PREVPREV
+					}
+				}
+			}
+		}
+
+		# Who would dare challange you?
+		modifier = {
+			factor = 0.95
+			OR = {
+				trait = master_warrior
+				trait = skilled_warrior
+			}
+		}
+		modifier = {
+			factor = 0.95
+			has_character_modifier = feared_5
+		}
+
+		# The longer you've owned the sword, the more people will believe you
+		modifier = {
+			factor = 0.15
+			any_artifact = {
+				had_artifact_flag = {
+					flag = flag_dynastic_sword
+					days = 45625 # 125 years
+				}
+			}
+		}
+		modifier = {
+			factor = 0.50
+			any_artifact = {
+				had_artifact_flag = {
+					flag = flag_dynastic_sword
+					days = 54750 # 150 years
+				}
+			}
+		}
+	}
+
+	immediate = {
+		random_artifact = {
+			had_artifact_flag = {
+				flag = flag_dynastic_sword
+				days = 10950 # 30 years
+			}
+			save_event_target_as = target_dynastic_sword
+		}
+	}
+
+	option = {
+		event_target:target_dynasty_sword_creator = { character_event = { id = vapid.25 } }
+	}
+}
+
+character_event = { # Ping to character who first declared the sword
+	id = vapid.22
+	hide_window = yes
+	#Stack
+	#ROOT = target_dynasty_sword_creator
+	#FROM = Sword owner
+	#This = target_dynasty_sword_creator
+	#target_dynasty_sword_creator = oroginal character that declared the sword ancestral
+	#target_dynastic_sword = the sword in question
+
+	trigger = {
+		dynasty = FROM
+		event_target:target_dynasty_sword_creator = { has_character_flag = previous_holder_@ROOT }
+	}
+
+	option = {
+		FROM = { character_event = { id = vapid.23 } }
+	}
+}
+
+character_event = { # Event declaring that the sword has remained in dynastic possession long enough
+	id = vapid.23
+	is_triggered_only = yes # Triggered by event vapid.22
+	show_portait = FROM
+	picture = "GFX_evt_valyrian_steel"
+	#Stack
+	#ROOT = Sword owner
+	#FROM = target_dynasty_sword_creator
+	#FROMFROM = Sword owner
+	#This = Sword owner
+	#target_dynasty_sword_creator = oroginal character that declared the sword ancestral
+	#target_dynastic_sword = the sword in question
+
+	desc = {
+		trigger = { NOT = { dynasty_head = { character = ROOT } } }
+		text = EVTDESC_not_head_VAPID.23
+	}
+	desc = {
+		trigger = {dynasty_head = { character = ROOT } }
+		text = EVTDESC_head_VAPID.23
+	}
+
+	trigger = {
+		event_target:target_dynasty_sword_creator = { character = FROM }
+	}
+
+	immediate = {
+		event_target:target_dynastic_sword = { set_artifact_flag = flag_confirmed_dynastic }
+	}
+
+	option = {
+		name = {
+			text = EVTOPT_dynasty_sword_VAPID.20
+			trigger = {
+				NOT = { has_house_words_trigger = yes }
+			}
+		}
+		name = {
+			text = EVTOPTGETHOUSEWORDS
+			trigger = {
+				has_house_words_trigger = yes
+			}
+		}
+		if = {
+			limit = { NOT = { dynasty_head = { character = ROOT } } }
+			dynasty_head = { tooltip = { show_portrait = yes } }
+		}
+	}
+}
+
+character_event = { # Sets custom house words for player when fired by create_house_words decision
+	id = vapid.25
+	desc = EVTDESC_VAPID.25
+	show_portait = FROM
+	picture = "GFX_evt_library"
+	is_triggered_only = yes # triggered by decision create_house_words
+
+	#Stack after decision is made
+	#ROOT = Player
+	#FROM = Player
+	#FROMFROM = Player
+	#This = Player
+
+	trigger = {
+		c_house_words = { holder_scope = { character = ROOT } }
+	}
+
+	immediate = {
+		c_house_words = { save_global_event_target_as = target_house_words_title }
+		set_dynasty_flag = flag_house_words
+	}
+
+	option = {
+		name = {
+			text = EVTOPT_OK_VAPID.25
+			trigger = {
+				NOT = { has_house_words_trigger = yes }
+			}
+		}
+		name = {
+			text = EVTOPTGETHOUSEWORDS
+			trigger = {
+				has_house_words_trigger = yes
+			}
+		}
+	}
+
+	after = {
+		hidden_tooltip = { c_house_words = { destroy_landed_title = yes } }
+		clr_character_flag = creating_house_words
+	}
+}
+
+province_event = { #failsafe destroy title being used for creating custom house words
+	id = vapid.26
+	is_triggered_only = yes  # triggered by decision create_house_words
+	hide_window = yes
+
+	#Stack after decision is made
+	#ROOT = capital province
+	#FROM = Player
+	#FROMFROM = Player
+	#This = capital province
+
+	immediate = {
+		c_house_words = {
+			activate_title = { title = THIS status = no }
+			unsafe_destroy_landed_title = THIS
+			destroy_landed_title = THIS
+			if = {
+				limit = { has_holder = yes }
+				create_character = {
+					random_traits = yes
+					dynasty = actually_culture
+					culture = ROOT
+					religion = ROOT
+				}
+				new_character = {
+					gain_title = PREV
+					death = yes
+				}
+			}
+		}
+	}
+}
+
+character_event = { # Character owns another house's dynastic sword
+	id = vapid.30
+	hide_window = yes
+	#Stack at event chain start
+	#ROOT = Sword stealer
+	#This = Sword stealer
+	#target_dynasty_sword_creator = oroginal character that declared the sword ancestral (a global event_target used to link creating dynasty to ancestral sword)
+
+	trigger = {
+		any_artifact = {
+			has_artifact_flag = flag_dynastic_sword
+			NOT = { has_artifact_flag = flag_confirmed_dynastic }
+		}
+		NOT = { event_target:target_dynasty_sword_creator = { dynasty = ROOT } }
+	}
+
+	mean_time_to_happen = {
+		years = 100
+
+	}
+
+	immediate = {
+		random_artifact = {
+			has_artifact_flag = flag_dynastic_sword
+			NOT = { has_artifact_flag = flag_confirmed_dynastic }
+			save_event_target_as = target_dynastic_sword
+		}
+	}
+
+	option = {
+		event_target:target_dynasty_sword_creator = {
+			dynasty_head = {
+				character_event = { id = vapid.24 }
+			}
+		}
+	}
+}
+
+character_event = { # Word is getting out that your family no longer possesses the sword
+	id = vapid.31
+	is_triggered_only = yes # Triggered by event vapid.31
+	show_portait = FROM
+	picture = "GFX_evt_valyrian_steel"
+	desc = "EVTDESC_VAPID.31"
+	#Stack
+	#ROOT = dynasty_head
+	#FROM = sword stealer
+	#This = dynasty_head
+	#target_dynasty_sword_creator = oroginal character that declared the sword ancestral
+	#target_dynastic_sword = the sword in question
+
+	trigger = {
+		event_target:target_dynasty_sword_creator = { dynasty = ROOT }
+		dynasty_head = { character = ROOT }
+	}
+
+	immediate = {
+		# Maybe use flags to allow this event to fire multiple times
+	}
+
+	option = {
+		trigger = { NOT = { ai = yes } } # Player is head of his or her own dynasty
+		name = EVTOPT_VAPID.31
+		if = {
+			limit = { # Your family members will be upset that you lost the sword before granting it to them
+				has_opinion_modifier = { who = FROM modifier = opinion_stole_sword }
+				event_target:target_dynastic_sword = { has_artifact_flag = stolen_from_@ROOT }
+			}
+			prestige = -500
+			any_dynasty_member = {
+				limit = {
+					NOT = { is_female = yes }
+					is_adult = yes
+					event_target:target_dynastic_sword = { # If've they lost it before, they don't have room to talk
+						NOT = { has_artifact_flag = stolen_from_@PREV }
+					}
+				}
+				opinion = {
+					who = ROOT
+					modifier = opinion_disappointed
+					months = 60
+				}
+			}
+		}
+		else = { # The person you granted it to lost it, that bastard
+			prestige = -250
+			any_dynasty_member = { # The loser that lost the sword - this might cause problems if multiple morons have had the same sword stolen. Probably low chance?
+				limit = {
+					event_target:target_dynastic_sword = {
+						has_artifact_flag = stolen_from_@PREV
+					}
+					has_opinion_modifier = { who = FROM modifier = opinion_stole_sword }
+				}
+				ROOT = { # How can we ever trust you again to care for our sword?
+					opinion = {
+						who = PREV
+						modifier = opinion_lost_our_sword
+						years = 50
+					}
+				}
+				any_dynasty_member = { # Any kin that felt like they should have owned the sword will be upset that you lost it to that loser
+					limit = {
+						NOT = { is_female = yes }
+						is_adult = yes
+						event_target:target_dynastic_sword = { # If they lost it before, they don't have room to talk
+							NOT = { has_artifact_flag = stolen_from_@PREV }
+						}
+						NOT = { character = ROOT }
+					}
+					if = {
+						limit = { # If they could have been granted the sword instead, they're going to take it out on you
+							is_close_relative = ROOT
+							OR = {
+								trait = skilled_warrior
+								trait = master_warrior
+							}
+						}
+						opinion = {
+							who = ROOT
+							modifier = opinion_disappointed
+							months = 24
+						}
+					}
+					opinion = {
+						who = PREV
+						modifier = opinion_disappointed
+						months = 60
+					}
+				}
+			}
+		}
+	}
+	option = {
+		trigger = { ai = yes } # Player is head of his or her own dynasty
+		name = EVTOPT_VAPID.31
+		random_dynasty_member = { character_event = { id = vapid.32 } }
+	}
+
+}
+
+# character_event = { # Word is getting out that your family no longer possesses the sword
+	# id = vapid.31
+	# is_triggered_only = yes # Triggered by event vapid.31
+	# show_portait = FROM
+	# picture = "GFX_evt_valyrian_steel"
+	# #Stack
+	# #ROOT = Player
+	# #FROM = sword stealer
+	# #This = Player
+	# #target_dynasty_sword_creator = oroginal character that declared the sword ancestral
+	# #target_dynastic_sword = the sword in question
+
+	# desc = {
+		# trigger = { NOT = { dynasty_head = { character = ROOT } } }
+		# text = EVTDESC_not_head_VAPID.31
+	# }
+	# desc = {
+		# trigger = {dynasty_head = { character = ROOT } }
+		# text = EVTDESC_head_VAPID.31
+	# }
+
+	# trigger = {
+		# event_target:target_dynasty_sword_creator = { dynasty = ROOT }
+	# }
+
+	# immediate = {
+		# # Maybe use flags to allow this event to fire multiple times
+	# }
+
+	# option = {
+		# trigger = { NOT = { dynasty_head = { character = ROOT } } }
+		# name = EVTOPT_head_VAPID.31
+		# prestige = -500
+		# if = {
+			# limit = { # You allowed this cretin to possess our ancestral sword?
+				# has_opinion_modifier = { who = FROM modifier = opinion_stole_sword }
+				# event_target:target_dynastic_sword = { has_artifact_flag = stolen_from_@ROOT }
+			# }
+		# }
+		# else = {
+			# any_dynasty_member = { # The loser that lost the sword - this might cause problems if multiple morons have had the same sword stolen. Probably low chance?
+				# limit = {
+					# event_target:target_dynastic_sword = {
+						# has_artifact_flag = stolen_from_@PREV
+					# }
+					# has_opinion_modifier = { who = FROM modifier = opinion_stole_sword }
+				# }
+				# any_dynasty_member = { # Any kin that felt like they should have owned the sword will be upset that you lost it to that loser
+					# limit = {
+						# NOT = { is_female = yes }
+						# is_adult = yes
+						# event_target:target_dynastic_sword = { # If they lost it before, they don't have room to talk
+							# NOT = { has_artifact_flag = stolen_from_@PREV }
+						# }
+					# }
+					# opinion = {
+						# who = ROOT
+						# modifier = opinion_disappointed
+						# months = 60
+					# }
+				# }
+			# }
+			# any_dynasty_member = { # Any kin that felt like they should have owned the sword will be upset that you gave it to that loser
+				# limit = {
+					# is_close_relative = ROOT
+					# OR = {
+						# trait = skilled_warrior
+						# trait = master_warrior
+					# }
+					# # hidden_tooltip = {
+						# event_target:target_dynastic_sword = {
+							# NOT = { has_character_flag = previous_holder_@PREV }
+						# }
+					# # }
+				# }
+				# opinion = {
+					# who = ROOT
+					# modifier = opinion_disappointed
+					# months = 60
+				# }
+			# }
+		# }
+		# if = {
+			# limit = { NOT = { dynasty_head = { character = ROOT } } }
+			# dynasty_head = {
+				# tooltip = { show_portrait = yes }
+				# if = {
+					# limit = { # You allow this cretin to possess our ancestral sword?
+						# has_opinion_modifier = { who = FROM modifier = opinion_stole_sword }
+						# event_target:target_dynastic_sword = { has_artifact_flag = stolen_from_@ROOT }
+					# }
+					# opinion = {
+						# who = ROOT
+						# modifier = opinion_disappointed
+						# months = 60
+					# }
+				# }
+			# }
+			# -50
+		# }
+		# else = {
+			# prestige = -500
+
+		# }
+	# }
+# }
